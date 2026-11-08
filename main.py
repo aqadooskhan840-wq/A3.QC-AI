@@ -143,15 +143,14 @@ USER REQUEST:
         )
 
     except Exception as e:
-        logger.exception("AI generation failed")
+    logger.exception("AI generation failed")
 
-        return JSONResponse(
-            status_code=500,
-            content={
-                "detail": "AI generation failed. Please check your API key, model access, quota and Vercel logs.",
-                "error": str(e)
-            }
-        )
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": f"AI ERROR: {str(e)}"
+        }
+    )
 
 
 # --------------------------------------------------
