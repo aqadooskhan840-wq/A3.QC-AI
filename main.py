@@ -23,7 +23,7 @@ app = FastAPI(
     description="AI Platform developed by Team 48",
     version="2.0.0"
 )
-
+application = app
 MODEL_NAME = "gemini-3.8-flash"
 
 # Static website
