@@ -21,15 +21,14 @@ async def generate_ai(
     module: str = Form(...),
     prompt_text: str = Form(...)
 ):
-    # Direct Vercel Environment Variable se key uthayein
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="Server Gemini API Key is not configured in environment variables.")
     
     try:
         genai.configure(api_key=api_key)
-        # Model name update kar ke standard stable model use karein
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Model name updated to gemini-2.5-flash
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         system_context = "You are A3 QC AI, an advanced multi-module AI assistant built by Team 48, Punjab College Quaid Campus (ICS CQ-31 Section) under Prof. Naveed Asif. Provide clean, professional, and well-structured answers."
         full_prompt = f"{system_context}\n\nTask/Module: {module}\nUser Input: {prompt_text}"
@@ -44,14 +43,13 @@ async def classify_waste(
     description: str = Form(default=""),
     file: UploadFile = File(default=None)
 ):
-    # Direct Vercel Environment Variable se key uthayein
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="Server Gemini API Key is not configured in environment variables.")
     
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         contents = ["Classify this waste item into Plastic, Glass, Metal, Organic, E-waste, or Paper, and provide eco-friendly recycling steps."]
         
