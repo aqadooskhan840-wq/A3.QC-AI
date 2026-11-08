@@ -22,15 +22,15 @@ async def generate_ai(
 ):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="Server Gemini API Key is not configured in environment variables.")
+        raise HTTPException(status_code=500, detail="API Key is missing in Vercel settings.")
     
     try:
         genai.configure(api_key=api_key)
-        # Updated to gemini-3.8-flash as recommended by Google's latest error message
-        model = genai.GenerativeModel('gemini-3.8-flash')
+        # Standard working stable model
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
-        system_context = "You are A3 QC AI, an advanced multi-module AI assistant built by Team 48, Punjab College Quaid Campus (ICS CQ-31 Section) under Prof. Naveed Asif. Provide clean, professional, and well-structured answers."
-        full_prompt = f"{system_context}\n\nTask/Module: {module}\nUser Input: {prompt_text}"
+        system_context = "You are A3 QC AI, an advanced AI assistant built by Team 48, Punjab College Quaid Campus (ICS CQ-31). Keep answers clean and professional."
+        full_prompt = f"{system_context}\n\nModule: {module}\nQuery: {prompt_text}"
         
         response = model.generate_content(full_prompt)
         return {"result": response.text}
@@ -44,23 +44,16 @@ async def classify_waste(
 ):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="Server Gemini API Key is not configured in environment variables.")
+        raise HTTPException(status_code=500, detail="API Key is missing in Vercel settings.")
     
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-3.8-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
-        contents = ["Classify this waste item into Plastic, Glass, Metal, Organic, E-waste, or Paper, and provide eco-friendly recycling steps."]
+        contents = ["Classify this waste into Plastic, Glass, Metal, Organic, E-waste, or Paper, with recycling steps."]
+        if description:
+            contents.append(f"Description: {description}")
         
-        if file and file.filename != "":
-            image_bytes = await file.read()
-            image = Image.open(io.BytesIO(image_bytes))
-            contents.append(image)
-        elif description:
-            contents.append(f"Waste Item Description: {description}")
-        else:
-            return JSONResponse({"result": "Please provide an image or text description of the waste item."})
-            
         response = model.generate_content(contents)
         return {"result": response.text}
     except Exception as e:
