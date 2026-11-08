@@ -15,17 +15,6 @@ def read_index():
     from fastapi.responses import FileResponse
     return FileResponse("static/index.html")
 
-def get_working_model():
-    """Automatically finds and returns the exact model available on Google servers right now."""
-    try:
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                return genai.GenerativeModel(m.name)
-    except Exception:
-        pass
-    # Fallback to standard name if listing fails
-    return genai.GenerativeModel('gemini-1.5-flash')
-
 @app.post("/api/generate")
 async def generate_ai(
     module: str = Form(...),
@@ -37,7 +26,8 @@ async def generate_ai(
     
     try:
         genai.configure(api_key=api_key)
-        model = get_working_model()
+        # Using the exact recommended model string directly
+        model = genai.GenerativeModel('gemini-3.8-flash')
         
         system_context = "You are A3 QC AI, an advanced AI assistant built by Team 48, Punjab College Quaid Campus (ICS CQ-31). Keep answers clean, professional, and structured."
         full_prompt = f"{system_context}\n\nModule: {module}\nQuery: {prompt_text}"
@@ -45,7 +35,13 @@ async def generate_ai(
         response = model.generate_content(full_prompt)
         return {"result": response.text}
     except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(e)}"})
+        # Fallback instantly to standard gemini-1.5-flash if 3.8 encounters any issue
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content(full_prompt)
+            return {"result": response.text}
+        except Exception as inner_e:
+            return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(inner_e)}"})
 
 @app.post("/api/classify-waste")
 async def classify_waste(
@@ -58,10 +54,9 @@ async def classify_waste(
     
     try:
         genai.configure(api_key=api_key)
-        model = get_working_model()
+        model = genai.GenerativeModel('gemini-3.8-flash')
         
         contents = ["Classify this waste into Plastic, Glass, Metal, Organic, E-waste, or Paper, with recycling steps."]
-        
         if file and file.filename != "":
             image_bytes = await file.read()
             image = Image.open(io.BytesIO(image_bytes))
@@ -72,4 +67,9 @@ async def classify_waste(
         response = model.generate_content(contents)
         return {"result": response.text}
     except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(e)}"})
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content(contents)
+            return {"result": response.text}
+        except Exception as inner_e:
+            return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(inner_e)}"})
