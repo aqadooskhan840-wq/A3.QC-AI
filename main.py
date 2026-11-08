@@ -9,11 +9,11 @@ from fastapi.staticfiles import StaticFiles
 from google import genai
 from PIL import Image, UnidentifiedImageError
 
-# --------------------------------------------------
+# ==========================================
 # A3 QC AI - TEAM 48
 # Punjab College Quaid Campus
 # ICS CQ-31
-# --------------------------------------------------
+# ==========================================
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("A3-QC-AI")
@@ -21,12 +21,17 @@ logger = logging.getLogger("A3-QC-AI")
 app = FastAPI(
     title="A3 QC AI Platform",
     description="AI Platform developed by Team 48",
-    version="2.0.0"
+    version="2.1.0"
 )
+
 application = app
+
 MODEL_NAME = "gemini-3.8-flash"
 
-# Static website
+# ==========================================
+# STATIC WEBSITE
+# ==========================================
+
 app.mount(
     "/static",
     StaticFiles(directory="static"),
@@ -34,37 +39,39 @@ app.mount(
 )
 
 
-# --------------------------------------------------
-# API CLIENT
-# --------------------------------------------------
+# ==========================================
+# GEMINI API CLIENT
+# ==========================================
 
 def get_ai_client():
+
     api_key = os.environ.get("GEMINI_API_KEY")
 
     if not api_key:
         raise ValueError(
-            "GEMINI_API_KEY is missing. "
-            "Add it in Vercel Environment Variables."
+            "GEMINI_API_KEY is missing in Vercel Environment Variables."
         )
 
     return genai.Client(api_key=api_key)
 
 
-# --------------------------------------------------
+# ==========================================
 # HOME PAGE
-# --------------------------------------------------
+# ==========================================
 
 @app.get("/")
 async def home():
+
     return FileResponse("static/index.html")
 
 
-# --------------------------------------------------
+# ==========================================
 # HEALTH CHECK
-# --------------------------------------------------
+# ==========================================
 
 @app.get("/api/health")
 async def health():
+
     return {
         "status": "online",
         "project": "A3 QC AI",
@@ -73,9 +80,9 @@ async def health():
     }
 
 
-# --------------------------------------------------
+# ==========================================
 # GENERAL AI GENERATION
-# --------------------------------------------------
+# ==========================================
 
 @app.post("/api/generate")
 async def generate_ai(
@@ -84,12 +91,16 @@ async def generate_ai(
 ):
 
     if not prompt_text.strip():
+
         return JSONResponse(
             status_code=400,
-            content={"detail": "Please enter some text."}
+            content={
+                "detail": "Please enter some text."
+            }
         )
 
     try:
+
         client = get_ai_client()
 
         system_context = """
@@ -106,6 +117,7 @@ For budget questions, provide responsible general
 budgeting suggestions.
 For language tasks, follow the requested language
 and formatting.
+
 Use headings and bullet points when helpful.
 """
 
@@ -135,28 +147,32 @@ USER REQUEST:
         }
 
     except ValueError as e:
-        logger.error("Configuration error: %s", e)
+
+        logger.exception("Configuration error")
 
         return JSONResponse(
             status_code=500,
-            content={"detail": str(e)}
+            content={
+                "detail": str(e)
+            }
         )
 
     except Exception as e:
-    logger.exception("AI generation failed")
 
-    return JSONResponse(
-        status_code=500,
-        content={
-            "detail": f"AI ERROR: {str(e)}"
-        }
-    )
+        logger.exception("AI generation failed")
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": f"AI ERROR: {str(e)}"
+            }
+        )
 
 
-# --------------------------------------------------
+# ==========================================
 # AI WASTE CLASSIFIER
-# Supports text descriptions and image uploads
-# --------------------------------------------------
+# Text + Image Support
+# ==========================================
 
 @app.post("/api/classify-waste")
 async def classify_waste(
@@ -167,6 +183,7 @@ async def classify_waste(
     if not description.strip() and (
         file is None or not file.filename
     ):
+
         return JSONResponse(
             status_code=400,
             content={
@@ -175,6 +192,7 @@ async def classify_waste(
         )
 
     try:
+
         client = get_ai_client()
 
         contents = [
@@ -194,6 +212,7 @@ one of these categories:
 7. Other / Mixed Waste
 
 Provide:
+
 - Identified item
 - Waste category
 - Brief explanation
@@ -205,12 +224,14 @@ classification is uncertain.
 """
         ]
 
-        # Image processing
+        # IMAGE PROCESSING
+
         if file is not None and file.filename:
 
             image_bytes = await file.read()
 
             if len(image_bytes) > 10 * 1024 * 1024:
+
                 return JSONResponse(
                     status_code=413,
                     content={
@@ -219,9 +240,11 @@ classification is uncertain.
                 )
 
             try:
+
                 image = Image.open(
                     io.BytesIO(image_bytes)
                 )
+
                 image.verify()
 
                 image = Image.open(
@@ -230,7 +253,12 @@ classification is uncertain.
 
                 contents.append(image)
 
-            except (UnidentifiedImageError, OSError, ValueError):
+            except (
+                UnidentifiedImageError,
+                OSError,
+                ValueError
+            ):
+
                 return JSONResponse(
                     status_code=400,
                     content={
@@ -238,10 +266,15 @@ classification is uncertain.
                     }
                 )
 
+        # TEXT DESCRIPTION
+
         if description.strip():
+
             contents.append(
                 "Waste description: " + description.strip()
             )
+
+        # GEMINI GENERATION
 
         response = client.models.generate_content(
             model=MODEL_NAME,
@@ -251,6 +284,7 @@ classification is uncertain.
         result = response.text
 
         if not result:
+
             result = "Unable to classify this waste item. Please try again."
 
         return {
@@ -259,25 +293,28 @@ classification is uncertain.
         }
 
     except ValueError as e:
-        logger.error("Configuration error: %s", e)
+
+        logger.exception("Configuration error")
 
         return JSONResponse(
             status_code=500,
-            content={"detail": str(e)}
+            content={
+                "detail": str(e)
+            }
         )
 
     except Exception as e:
+
         logger.exception("Waste classification failed")
 
         return JSONResponse(
             status_code=500,
             content={
-                "detail": "Waste classification failed. Check API access, quota and Vercel logs.",
-                "error": str(e)
+                "detail": f"WASTE AI ERROR: {str(e)}"
             }
         )
 
 
-# --------------------------------------------------
+# ==========================================
 # END OF A3 QC AI BACKEND
-# --------------------------------------------------
+# ==========================================
