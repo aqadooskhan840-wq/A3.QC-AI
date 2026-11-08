@@ -30,22 +30,14 @@ async def generate_ai(
         system_context = "You are A3 QC AI, an advanced AI assistant built by Team 48, Punjab College Quaid Campus (ICS CQ-31). Keep answers clean, professional, and structured."
         full_prompt = f"{system_context}\n\nModule: {module}\nQuery: {prompt_text}"
         
-        # Using the exact recommended model from Google's error
+        # Using the standard stable gemini-1.5-flash model
         response = client.models.generate_content(
-            model='gemini-3.8-flash',
+            model='gemini-1.5-flash',
             contents=full_prompt,
         )
         return {"result": response.text}
     except Exception as e:
-        try:
-            client = genai.Client(api_key=api_key)
-            response = client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=full_prompt,
-            )
-            return {"result": response.text}
-        except Exception as inner_e:
-            return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(inner_e)}"})
+        return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(e)}"})
 
 @app.post("/api/classify-waste")
 async def classify_waste(
@@ -68,16 +60,9 @@ async def classify_waste(
             contents.append(f"Description: {description}")
         
         response = client.models.generate_content(
-            model='gemini-3.8-flash',
+            model='gemini-1.5-flash',
             contents=contents,
         )
         return {"result": response.text}
     except Exception as e:
-        try:
-            response = client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=contents,
-            )
-            return {"result": response.text}
-        except Exception as inner_e:
-            return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(inner_e)}"})
+        return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(e)}"})
