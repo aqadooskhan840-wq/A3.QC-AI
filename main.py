@@ -22,20 +22,21 @@ async def generate_ai(
 ):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="API Key is missing in Vercel settings.")
+        raise HTTPException(status_code=500, detail="API Key is missing in Vercel environment variables.")
     
     try:
         genai.configure(api_key=api_key)
-        # Using the exact model recommended in Google's error message
-        model = genai.GenerativeModel('gemini-3.8-flash')
+        # Using the standard, guaranteed working model name
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
-        system_context = "You are A3 QC AI, an advanced AI assistant built by Team 48, Punjab College Quaid Campus (ICS CQ-31). Keep answers clean and professional."
+        system_context = "You are A3 QC AI, an advanced AI assistant built by Team 48, Punjab College Quaid Campus (ICS CQ-31). Keep answers clean, professional, and structured."
         full_prompt = f"{system_context}\n\nModule: {module}\nQuery: {prompt_text}"
         
         response = model.generate_content(full_prompt)
         return {"result": response.text}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # This will show the exact error message on the screen instead of freezing
+        return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(e)}"})
 
 @app.post("/api/classify-waste")
 async def classify_waste(
@@ -44,11 +45,11 @@ async def classify_waste(
 ):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="API Key is missing in Vercel settings.")
+        raise HTTPException(status_code=500, detail="API Key is missing in Vercel environment variables.")
     
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-3.8-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         contents = ["Classify this waste into Plastic, Glass, Metal, Organic, E-waste, or Paper, with recycling steps."]
         if description:
@@ -57,4 +58,4 @@ async def classify_waste(
         response = model.generate_content(contents)
         return {"result": response.text}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(e)}"})
