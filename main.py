@@ -22,11 +22,10 @@ async def generate_ai(
 ):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="API Key is missing in Vercel environment variables.")
+        return JSONResponse(status_code=500, content={"detail": "API Key is missing in Vercel environment variables."})
     
     try:
         genai.configure(api_key=api_key)
-        # Using the standard, guaranteed working model name
         model = genai.GenerativeModel('gemini-1.5-flash')
         
         system_context = "You are A3 QC AI, an advanced AI assistant built by Team 48, Punjab College Quaid Campus (ICS CQ-31). Keep answers clean, professional, and structured."
@@ -35,7 +34,6 @@ async def generate_ai(
         response = model.generate_content(full_prompt)
         return {"result": response.text}
     except Exception as e:
-        # This will show the exact error message on the screen instead of freezing
         return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(e)}"})
 
 @app.post("/api/classify-waste")
@@ -45,7 +43,7 @@ async def classify_waste(
 ):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="API Key is missing in Vercel environment variables.")
+        return JSONResponse(status_code=500, content={"detail": "API Key is missing in Vercel environment variables."})
     
     try:
         genai.configure(api_key=api_key)
