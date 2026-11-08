@@ -26,8 +26,8 @@ async def generate_ai(
     
     try:
         genai.configure(api_key=api_key)
-        # Standard working stable model
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Using the standard stable model supported by the updated SDK
+        model = genai.GenerativeModel('gemini-2.0-flash')
         
         system_context = "You are A3 QC AI, an advanced AI assistant built by Team 48, Punjab College Quaid Campus (ICS CQ-31). Keep answers clean and professional."
         full_prompt = f"{system_context}\n\nModule: {module}\nQuery: {prompt_text}"
@@ -48,7 +48,7 @@ async def classify_waste(
     
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         
         contents = ["Classify this waste into Plastic, Glass, Metal, Organic, E-waste, or Paper, with recycling steps."]
         if description:
