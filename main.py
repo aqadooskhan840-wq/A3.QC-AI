@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
-import google.generativeai as genai
+from google import genai
 import os
 from PIL import Image
 import io
@@ -25,20 +25,25 @@ async def generate_ai(
         return JSONResponse(status_code=500, content={"detail": "API Key is missing in Vercel environment variables."})
     
     try:
-        genai.configure(api_key=api_key)
-        # Using the exact recommended model string directly
-        model = genai.GenerativeModel('gemini-3.8-flash')
+        # Using the official Google AI Studio SDK client
+        client = genai.Client(api_key=api_key)
         
         system_context = "You are A3 QC AI, an advanced AI assistant built by Team 48, Punjab College Quaid Campus (ICS CQ-31). Keep answers clean, professional, and structured."
         full_prompt = f"{system_context}\n\nModule: {module}\nQuery: {prompt_text}"
         
-        response = model.generate_content(full_prompt)
+        # Using the standard modern flash model
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=full_prompt,
+        )
         return {"result": response.text}
     except Exception as e:
-        # Fallback instantly to standard gemini-1.5-flash if 3.8 encounters any issue
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            response = model.generate_content(full_prompt)
+            # Fallback to gemini-2.0-flash if needed
+            response = client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=full_prompt,
+            )
             return {"result": response.text}
         except Exception as inner_e:
             return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(inner_e)}"})
@@ -53,10 +58,9 @@ async def classify_waste(
         return JSONResponse(status_code=500, content={"detail": "API Key is missing in Vercel environment variables."})
     
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-3.8-flash')
-        
+        client = genai.Client(api_key=api_key)
         contents = ["Classify this waste into Plastic, Glass, Metal, Organic, E-waste, or Paper, with recycling steps."]
+        
         if file and file.filename != "":
             image_bytes = await file.read()
             image = Image.open(io.BytesIO(image_bytes))
@@ -64,12 +68,17 @@ async def classify_waste(
         elif description:
             contents.append(f"Description: {description}")
         
-        response = model.generate_content(contents)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=contents,
+        )
         return {"result": response.text}
     except Exception as e:
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            response = model.generate_content(contents)
+            response = client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=contents,
+            )
             return {"result": response.text}
         except Exception as inner_e:
             return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(inner_e)}"})
