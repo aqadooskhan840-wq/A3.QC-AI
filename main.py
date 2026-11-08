@@ -26,8 +26,8 @@ async def generate_ai(
     
     try:
         genai.configure(api_key=api_key)
-        # Correct stable model name
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        # Updated to gemini-3.8-flash as recommended by Google's latest error message
+        model = genai.GenerativeModel('gemini-3.8-flash')
         
         system_context = "You are A3 QC AI, an advanced multi-module AI assistant built by Team 48, Punjab College Quaid Campus (ICS CQ-31 Section) under Prof. Naveed Asif. Provide clean, professional, and well-structured answers."
         full_prompt = f"{system_context}\n\nTask/Module: {module}\nUser Input: {prompt_text}"
@@ -48,7 +48,7 @@ async def classify_waste(
     
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-3.8-flash')
         
         contents = ["Classify this waste item into Plastic, Glass, Metal, Organic, E-waste, or Paper, and provide eco-friendly recycling steps."]
         
