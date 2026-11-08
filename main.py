@@ -15,24 +15,16 @@ def read_index():
     from fastapi.responses import FileResponse
     return FileResponse("static/index.html")
 
-def call_gemini_with_fallback(contents):
-    """Automatically tries multiple models so it never fails if one is deprecated."""
-    models_to_try = [
-        'gemini-1.5-flash',
-        'gemini-2.0-flash',
-        'gemini-1.5-pro',
-        'gemini-pro'
-    ]
-    last_exception = None
-    for model_name in models_to_try:
-        try:
-            model = genai.GenerativeModel(model_name)
-            response = model.generate_content(contents)
-            return response
-        except Exception as e:
-            last_exception = e
-            continue
-    raise last_exception
+def get_working_model():
+    """Automatically finds and returns the exact model available on Google servers right now."""
+    try:
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                return genai.GenerativeModel(m.name)
+    except Exception:
+        pass
+    # Fallback to standard name if listing fails
+    return genai.GenerativeModel('gemini-1.5-flash')
 
 @app.post("/api/generate")
 async def generate_ai(
@@ -45,11 +37,12 @@ async def generate_ai(
     
     try:
         genai.configure(api_key=api_key)
+        model = get_working_model()
         
         system_context = "You are A3 QC AI, an advanced AI assistant built by Team 48, Punjab College Quaid Campus (ICS CQ-31). Keep answers clean, professional, and structured."
         full_prompt = f"{system_context}\n\nModule: {module}\nQuery: {prompt_text}"
         
-        response = call_gemini_with_fallback(full_prompt)
+        response = model.generate_content(full_prompt)
         return {"result": response.text}
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(e)}"})
@@ -65,6 +58,7 @@ async def classify_waste(
     
     try:
         genai.configure(api_key=api_key)
+        model = get_working_model()
         
         contents = ["Classify this waste into Plastic, Glass, Metal, Organic, E-waste, or Paper, with recycling steps."]
         
@@ -75,7 +69,7 @@ async def classify_waste(
         elif description:
             contents.append(f"Description: {description}")
         
-        response = call_gemini_with_fallback(contents)
+        response = model.generate_content(contents)
         return {"result": response.text}
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": f"AI Error: {str(e)}"})
